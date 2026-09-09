@@ -114,11 +114,3 @@ This is not a security audit or field trial. Guest database cleanup, abuse contr
 4. Guest retention/cleanup and abuse protection.
 5. Field evaluation with a studio and more detailed project storage.
 
-## Submission materials
-- [Idea](docs/IDEA.md)
-- [Documentation](docs/SETUP.md), plus architecture, decisions, AI use and roadmap above
-- [3–5 minute video recording plan](docs/WALKTHROUGH.md)
-- [GitHub upload instructions](docs/GITHUB_HANDOFF.md)
-- [30-minute presentation plan](docs/PRESENTATION.md)
-
-The video has not been recorded in this package. Submit its actual shareable link separately. The GitHub repository URL is available after the applicant creates and pushes the repository.
