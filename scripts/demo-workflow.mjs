@@ -1,0 +1,26 @@
+// Runs the actual domain engine with synthetic in-memory state. No identity bypass or server.
+import assert from 'node:assert/strict';
+import {initialProject,applyCommand,taskState,validateDependencies} from '../lib/coordination.ts';
+let project=initialProject();
+const command=c=>{project=applyCommand(project,c)};
+command({type:'createChange',actor:'client',root:'T01',title:'Move bathroom wall by 600 mm',description:'Increase shower space; review plumbing, quantities and site work.'});
+const change=project.changes[0];
+console.log('CHANGE:',change.title);
+console.log('DOWNSTREAM IMPACTS:',change.impacts.length);
+for(const impact of change.impacts)console.log(' -',impact.path.map(id=>project.tasks.find(t=>t.id===id).title).join(' -> '));
+command({type:'confirm',actor:'pm',id:change.id});
+assert.equal(project.actions.length,8);
+console.log('REVIEW ACTIONS:',project.actions.length);
+assert.throws(()=>applyCommand(project,{type:'approve',actor:'client',id:change.id}),/Complete all/);
+console.log('EARLY APPROVAL: rejected as expected');
+for(const action of [...project.actions])command({type:'completeAction',actor:action.owner,id:action.id,note:'Synthetic demo review: checked the impact and confirmed the revised scope.'});
+command({type:'approve',actor:'client',id:change.id,note:'Synthetic demo decision: revised scope approved.'});
+const state=id=>taskState(project,project.tasks.find(t=>t.id===id));
+assert.equal(state('T05'),'To do');assert.equal(state('T07'),'Blocked');assert.equal(state('T10'),'In progress');
+console.log('APPROVED. Plumbing installation:',state('T05'));
+console.log('Bathroom finishes:',state('T07'),'— unfinished prerequisites still apply');
+console.log('Kitchen material order:',state('T10'),'— unaffected');
+const invalid=structuredClone(project.tasks);invalid[0].dependsOn=['T08'];
+assert.throws(()=>validateDependencies(invalid),/Circular dependency/);
+console.log('CIRCULAR DEPENDENCY: rejected as expected');
+console.log('PASS. In-memory scenario completed; no hosted project data was changed.');

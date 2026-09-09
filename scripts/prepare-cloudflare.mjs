@@ -1,0 +1,11 @@
+import { readFile, writeFile } from 'node:fs/promises';
+const root = new URL('../', import.meta.url);
+const target = new URL('dist/server/wrangler.json', root);
+const settings = JSON.parse(await readFile(new URL('cloudflare.config.json', root), 'utf8'));
+if (!/^[a-z0-9-]+$/.test(settings.name) || !/^[0-9a-f-]{36}$/i.test(settings.database_id)) throw new Error('Check cloudflare.config.json');
+const config = JSON.parse(await readFile(target, 'utf8'));
+config.name = settings.name;
+config.workers_dev = true;
+config.d1_databases = [{ binding: 'DB', database_name: settings.database_name, database_id: settings.database_id }];
+await writeFile(target, JSON.stringify(config, null, 2) + '\n');
+console.log('Configured ' + settings.name + ' with DB: ' + settings.database_name);

@@ -1,0 +1,11 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {memberActor,authenticatedCommand,validateMember} from '../lib/access.ts';
+import {initialProject} from '../lib/coordination.ts';
+const owner={id:'owner-id',email:'owner@example.test',name:'Owner'},client={id:'client-id',email:'client@example.test',name:'Client'},stranger={id:'other',email:'other@example.test',name:'Other'};
+const team={owner:'owner-id',owner_email:'owner@example.test'};
+const members=[{id:'m1',team_id:'team',email:'client@example.test',actor:'client'}];
+test('server assigns owner and member actors from stored membership',()=>{assert.equal(memberActor(owner,team,members),'pm');assert.equal(memberActor(client,team,members),'client');assert.throws(()=>memberActor(stranger,team,members),/access/)});
+test('team client cannot impersonate manager even with a forged command actor',()=>{assert.throws(()=>authenticatedCommand({type:'confirm',actor:'pm'},'client',initialProject()),/another stakeholder/);assert.equal(authenticatedCommand({type:'approve',actor:'client'},'client',initialProject()).actor,'client')});
+test('revoked membership cannot reopen project and pm cannot be granted through membership',()=>{assert.throws(()=>memberActor(client,team,[]),/access/);assert.throws(()=>memberActor(client,team,[{...members[0],actor:'pm'}]),/access/)});
+test('only owner can assign existing non-manager stakeholders to other accounts',()=>{assert.throws(()=>validateMember(client,team,initialProject(),'new@example.test','architect'),/Only the workspace owner/);assert.throws(()=>validateMember(owner,team,initialProject(),'new@example.test','pm'),/retains/);assert.throws(()=>validateMember(owner,team,initialProject(),'owner@example.test','client'),/retains/);assert.throws(()=>validateMember(owner,team,initialProject(),'new@example.test','missing'),/existing stakeholder/);assert.doesNotThrow(()=>validateMember(owner,team,initialProject(),'new@example.test','architect'))});
